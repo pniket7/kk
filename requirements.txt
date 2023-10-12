@@ -3,4 +3,3 @@ speechrecognition==3.10.0
 gtts==2.4.0
 audio_recorder_streamlit==0.0.8
 pyaudio==0.2.11
-portaudio19
