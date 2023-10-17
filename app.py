@@ -13,9 +13,13 @@ from gtts import gTTS
 import os
 from audio_recorder_streamlit import audio_recorder
 import time
+import tempfile
 
-# Initialize SpeechRecognition recognizer
 recognizer = sr.Recognizer()
+session_state = st.session_state
+
+# Main Streamlit app
+st.title("Voice Interview Chatbot")
 
 # Define chatbot logic for different roles
 def project_manager_interview():
@@ -48,77 +52,101 @@ def hr_manager_interview():
     ]
     return questions
 
-# Main Streamlit app
-st.title("Voice Interview Chatbot")
+def recorder(audio_bytes):
+    temp_audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    temp_audio_file.write(audio_bytes)
+    temp_audio_file.close()
 
-# Conversation flow for different roles
-if st.button("Start Interview"):
-    # Use gTTS to convert the welcome message to audio
-    welcome_message = "Hello. What type of role are you interested in? Project Manager, Developer, or HR Manager?"
-    tts = gTTS(text=welcome_message, lang='en')
-    tts.save("welcome_message.mp3")
+    with sr.AudioFile(temp_audio_file.name) as source:
+        audio_data = recognizer.record(source)
+        user_response = recognizer.recognize_google(audio_data)
+    
+    return user_response
+    
+def main():
+    # Add a button to start the interview
+    if st.button("Start Interview"):
+        session_state.conversation_started = True
+        session_state.role_prompted = True
+        # Add a button to exit the interview
 
-    # Play the audio file for the welcome message with a 10-second delay
-    audio_file = open("welcome_message.mp3", "rb")
-    audio_bytes = audio_file.read()
-    st.audio(audio_bytes, format='audio/mp3')
+    if st.button("Exit Interview"):
+        session_state.conversation_started = False  # Reset the conversation
+        session_state.role_prompted = False
+        session_state.audio_recorded = False
+        session_state.clear()
+        st.write("Bot: Goodbye!")
 
-    # Add a delay of 10 seconds before prompting the user to respond
-    time.sleep(10)
+    # If the conversation has started, prompt the user to select a job role
+    if session_state.get("conversation_started"):
+        if session_state.get("role_prompted"):
+            # Use gTTS to convert the welcome message to audio
+            welcome_message = "Hello. What type of role are you interested in? Project Manager, Developer, or HR Manager?"
+            tts = gTTS(text=welcome_message, lang='en')
+            tts.save("welcome_message.mp3")
 
-    with sr.Microphone() as source:
-        st.write("User: (Speak your response)")
-        audio = recognizer.listen(source)
-
-    user_response = recognizer.recognize_google(audio)
-    st.write(f"User: {user_response}")
-
-    if "project manager" in user_response.lower():
-        questions = project_manager_interview()
-    elif "developer" in user_response.lower():
-        questions = developer_interview()
-    elif "hr manager" in user_response.lower():
-        questions = hr_manager_interview()
-    else:
-        st.write("Bot: I'm sorry, I didn't understand your choice.")
-        st.stop()
-
-    for question in questions:
-        while True:
-            # Use gTTS to convert text to speech and save the question as an audio file
-            tts = gTTS(text=question, lang='en')
-            tts.save("question.mp3")
-
-            # Play the audio file using st.audio() after a delay
-            audio_file = open("question.mp3", "rb")
+            # Play the audio file for the welcome message with a 10-second delay
+            audio_file = open("welcome_message.mp3", "rb")
             audio_bytes = audio_file.read()
             st.audio(audio_bytes, format='audio/mp3')
+            # Use audio_recorder to record the user's response
+            audio_bytes = audio_recorder(key="01")
 
-            # Add a delay of 6 seconds before prompting the user to respond
-            time.sleep(6)
+            if audio_bytes:
+                user_response=recorder(audio_bytes)
+                # Select a job role based on the user's response
+                if "project manager" in user_response.lower():
+                    session_state.role = "project_manager"
+                elif "developer" in user_response.lower():
+                    session_state.role = "developer"
+                elif "hr manager" in user_response.lower():
+                    session_state.role = "hr_manager"
+                else:
+                    st.write("Bot: I didn't understand the choice.")
+                    st.stop()
+                # Set the role_prompted flag to False
+                session_state.role_prompted = False
 
-            with sr.Microphone() as source:
-                st.write("User: (Speak your response)")
-                audio = recognizer.listen(source)
 
-            user_response = recognizer.recognize_google(audio)
+        # If a role has been selected, ask the user interview questions for that role
+        if session_state.get("role"):
+            # Get the interview questions for the selected role
+            questions = get_interview_questions(session_state.role)
 
-            if user_response:
-                st.write(f"User: {user_response}")
-                break  # Exit the loop if a response is detected
-            else:
-                st.write("Bot: I didn't hear a response. Please answer the question.")
+            # Ask each question and record the user's response
+            for question in questions:
+                tts = gTTS(text=question, lang='en')
+                tts.save("question.mp3")
 
-    # Convert the final statement to audio
-    final_statement = "Your interview is complete. Thank you for answering the questions."
-    tts = gTTS(text=final_statement, lang='en')
-    tts.save("final_statement.mp3")
+                # Play the audio file using st.audio() after a delay
+                audio_file = open("question.mp3", "rb")
+                audio_bytes = audio_file.read()
+                st.write(f"Bot: {question}")
+                st.audio(audio_bytes, format='audio/mp3')
+                # Use audio_recorder to record the user's response
+                audio_bytes = audio_recorder(key=f"{question}")
+                while True:
+                    if audio_bytes:
+                        user_response=recorder(audio_bytes)
+                        # Write the question and user's response to the screen in chat like format
+                        st.write(f"User: {user_response}")
+                        st.audio(audio_bytes, format="audio/wav")
+                        break
+                    else:
+                        st.write("Waiting for user response...")
+                        time.sleep(6)
 
-    # Play the audio file for the final statement
-    audio_file = open("final_statement.mp3", "rb")
-    audio_bytes = audio_file.read()
-    st.audio(audio_bytes, format='audio/mp3')
 
-if st.button("Exit Interview"):
-    st.write("Bot: Goodbye!")
+# Get the interview questions for the selected role
+def get_interview_questions(role):
+    if role == "project_manager":
+        return project_manager_interview()
+    elif role == "developer":
+        return developer_interview()
+    elif role == "hr_manager":
+        return hr_manager_interview()
+    else:
+        return []
 
+if __name__ == "__main__":
+    main()
