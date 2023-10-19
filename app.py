@@ -12,7 +12,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import PromptTemplate
-
+import base64
+from io import BytesIO
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -21,7 +22,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 recognizer = sr.Recognizer()
 session_state = st.session_state
 
-message_history = StreamlitChatMessageHistory(key="chat_messages") 
+message_history = StreamlitChatMessageHistory(key="chat_history") 
 llm = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo")
 memory = ConversationBufferWindowMemory(
             k=10, memory_key="chat_history", chat_memory=message_history
@@ -29,39 +30,20 @@ memory = ConversationBufferWindowMemory(
 
 PROMPT = PromptTemplate(input_variables=["chat_history", "input"], template=pt.prompt_template)
 
-
-def message_from_memory(memory):
-    messages = [{"role" : "system", "content" : pt.prompt_template.format()}]
-    for message in  memory.buffer_as_messages:
-        message_type = message.type
-        message_content = message.content
-        if message_type == "ai":
-            messages.append({"role": "assistant", "content": message_content})
-        else: 
-            messages.append({"role": "user", "content": message_content})
-    return messages
-
-
-def chatgpt(conversation=memory, temperature=0):
-    completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        temperature=temperature,
-        messages=message_from_memory(conversation),
-    )
-    chat_response = completion['choices'][0]['message']['content']
-    return chat_response
-
+def audio_play(audio):
+    audio_base64 = base64.b64encode(audio).decode('utf-8')
+    audio_tag = f'<audio autoplay="true" src="data:audio/wav;base64,{audio_base64}">'
+    time.sleep(1)
+    st.markdown(audio_tag, unsafe_allow_html=True)
 
 def text_to_speech(text):
+    sound_file = BytesIO()
     tts = gTTS(text=text, lang='en')
-    tts.save("response.mp3")
-
-    # Play the audio file using st.audio() after a delay
-    audio_file = open("response.mp3", "rb")
-    audio_bytes = audio_file.read()
-    return audio_bytes
+    tts.write_to_fp(sound_file)
+    return sound_file.getvalue()
 
 chain = ConversationChain(prompt=PROMPT, llm=llm, memory=memory)
+
 
 # Main Streamlit app
 st.title("Voice Interview Chatbot")
@@ -80,14 +62,15 @@ def recorder(audio_bytes):
     
 def main():
     if message_history.messages == []:
-
         message_history.add_ai_message(
             "Hello! Thank you for participating in this interview. To get started, please provide the job role or position you are applying for.",
         )
+
     # Add a button to start the interview
     if st.button("Start Interview"):
         session_state.conversation_started = True
         session_state.role_prompted = True
+        session_state.audio_recorded = True
         # Add a button to exit the interview
 
     if st.button("Exit Interview"):
@@ -97,14 +80,13 @@ def main():
         session_state.clear()
         st.write("Bot: Goodbye!")
 
-    end_time =None
     chat_placeholder = st.container()
     display_container = st.container()
     answer_placeholder = st.container()
 
     # If the conversation has started, prompt the user to select a job role
     if session_state.get("conversation_started"):
-        session_state.candidate = True
+        
         with chat_placeholder:
             for message in memory.buffer_as_messages:
                 message_type = message.type
@@ -113,37 +95,40 @@ def main():
                 with st.chat_message("Assistant" if message_type == "ai" else "User"):
                     st.write(message_content)
 
-            with st.chat_message("Assistant" if message_type == "ai" else "User"):
-                audio_bytes=text_to_speech(message_content)
-                st.audio(audio_bytes, format='audio/mp3')
+            if session_state.audio_recorded:
+                audio_bytes0=text_to_speech(memory.buffer_as_messages[0].content)
+                audio_play(audio_bytes0)
+            # with st.chat_message("Assistant" if message_type == "ai" else "User"):
+            #     audio_bytes0=text_to_speech(message_content)
+            #     st.audio(audio_bytes0, format='audio/mp3')
+
 
         with answer_placeholder:
-            if session_state.candidate:
-                audio_bytes = audio_recorder(pause_threshold=2)
-                if audio_bytes:
-                    user_response = recorder(audio_bytes)
-                    start_time = time.time()
-                    session_state.candidate = False
-
-        with display_container:
+            session_state.audio_recorded = False
+            audio_bytes = audio_recorder(pause_threshold=2)
+            session_state.user_response = None
             if audio_bytes:
-                if user_response:
+                session_state.user_response = recorder(audio_bytes)
+
+        with display_container:   
+            if session_state.user_response:
+                with st.spinner("Thinking..."):
+                    start_time = time.time()
                     with st.chat_message("User"):
-                        st.write(user_response)
+                        st.write(session_state.user_response)
 
                     with st.chat_message("Assistant"):
-                        with st.spinner("Thinking..."):
-                            get_response(user_response, start_time)
-                            session_state.candidate = True
+                        get_response(session_state.user_response, start_time)
+                        
 
 def get_response(user_response, start_time):
     response = chain.run(user_response)
     st.write(response)
-    st.audio(text_to_speech(response), format='audio/mp3')
+    audio_play(text_to_speech(response))
+    # st.audio(, format='audio/mp3')
+
     end_time = time.time()
     st.write(f"Execution time: {(end_time - start_time):.3f} seconds")
-    audio_bytes=None
-    user_response=None
 
 if __name__ == "__main__":
     main()
