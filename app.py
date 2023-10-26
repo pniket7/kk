@@ -107,8 +107,12 @@ def main():
 
         with answer_placeholder:
             session_state.audio_recorded = False
-            audio_bytes = audio_recorder(pause_threshold=2)
-            session_state.user_response = None
+            try:
+                audio_bytes = audio_recorder(pause_threshold=2)
+                session_state.user_response = None
+            except:
+                st.write("Sorry, Could not recognize speech. Please try again")
+                        
             if audio_bytes:
                 try:
                     session_state.user_response = recorder(audio_bytes)
