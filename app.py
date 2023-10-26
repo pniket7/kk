@@ -12,6 +12,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import PromptTemplate
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 import base64
 from io import BytesIO
 
@@ -23,7 +24,8 @@ recognizer = sr.Recognizer()
 session_state = st.session_state
 
 message_history = StreamlitChatMessageHistory(key="chat_history") 
-llm = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo")
+callback_manager = StreamingStdOutCallbackHandler()
+llm = ChatOpenAI(temperature=0.0, streaming=True, callbacks=[callback_manager], model="gpt-3.5-turbo")
 memory = ConversationBufferWindowMemory(
             k=10, memory_key="chat_history", chat_memory=message_history
         )
@@ -42,7 +44,7 @@ def text_to_speech(text):
     tts.write_to_fp(sound_file)
     return sound_file.getvalue()
 
-chain = ConversationChain(prompt=PROMPT, llm=llm, memory=memory)
+chain = ConversationChain(prompt=PROMPT, llm=llm, memory=memory, callbacks=[callback_manager])
 
 
 # Main Streamlit app
@@ -108,7 +110,10 @@ def main():
             audio_bytes = audio_recorder(pause_threshold=2)
             session_state.user_response = None
             if audio_bytes:
-                session_state.user_response = recorder(audio_bytes)
+                try:
+                    session_state.user_response = recorder(audio_bytes)
+                except:
+                    st.write("Sorry, Could not recognize speech. Please try again")
 
         with display_container:   
             if session_state.user_response:
