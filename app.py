@@ -63,7 +63,7 @@ def recorder(audio_bytes):
 def main():
     if message_history.messages == []:
         message_history.add_ai_message(
-            "Hello! Thank you for participating in this interview. To get started, please provide the job role or position you are applying for.",
+            "Hello! Thank you for participating in this interview. To get started,can you please introduce yourself.",
         )
 
     # Add a button to start the interview
