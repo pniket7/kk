@@ -12,7 +12,6 @@ from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import PromptTemplate
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 import base64
 from io import BytesIO
 
@@ -24,12 +23,12 @@ recognizer = sr.Recognizer()
 session_state = st.session_state
 
 message_history = StreamlitChatMessageHistory(key="chat_history") 
-callback_manager = StreamingStdOutCallbackHandler()
-llm = ChatOpenAI(temperature=0.0, streaming=True, callbacks=[callback_manager], model="gpt-3.5-turbo")
+llm = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo")
 memory = ConversationBufferWindowMemory(
             k=10, memory_key="chat_history", chat_memory=message_history
         )
 
+# Modify the prompt template to include an introduction question
 PROMPT = PromptTemplate(input_variables=["chat_history", "input"], template=pt.prompt_template)
 
 def audio_play(audio):
@@ -44,12 +43,10 @@ def text_to_speech(text):
     tts.write_to_fp(sound_file)
     return sound_file.getvalue()
 
-chain = ConversationChain(prompt=PROMPT, llm=llm, memory=memory, callbacks=[callback_manager])
-
+chain = ConversationChain(prompt=PROMPT, llm=llm, memory=memory)
 
 # Main Streamlit app
 st.title("Voice Interview Chatbot")
-
 
 def recorder(audio_bytes):
     temp_audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
@@ -61,24 +58,21 @@ def recorder(audio_bytes):
         user_response = recognizer.recognize_google(audio_data)
     
     return user_response
-    
+
 def main():
     if message_history.messages == []:
         message_history.add_ai_message(
-            "Hello! Thank you for participating in this interview. To get started, please provide the job role or position you are applying for.",
+            "Hello! Thank you for participating in this interview. To get started, please introduce yourself and provide your name."
         )
 
     # Add a button to start the interview
     if st.button("Start Interview"):
         session_state.conversation_started = True
-        session_state.role_prompted = True
-        session_state.audio_recorded = True
-        # Add a button to exit the interview
+        session_state.intro_prompted = True
 
     if st.button("Exit Interview"):
         session_state.conversation_started = False  # Reset the conversation
-        session_state.role_prompted = False
-        session_state.audio_recorded = False
+        session_state.intro_prompted = False
         session_state.clear()
         st.write("Bot: Goodbye!")
 
@@ -86,9 +80,8 @@ def main():
     display_container = st.container()
     answer_placeholder = st.container()
 
-    # If the conversation has started, prompt the user to select a job role
-    if session_state.get("conversation_started"):
-        
+    # If the conversation has started, first ask for introduction and name
+    if session_state.get("conversation_started") and session_state.get("intro_prompted"):
         with chat_placeholder:
             for message in memory.buffer_as_messages:
                 message_type = message.type
@@ -98,28 +91,17 @@ def main():
                     st.write(message_content)
 
             if session_state.audio_recorded:
-                audio_bytes0=text_to_speech(memory.buffer_as_messages[0].content)
+                audio_bytes0 = text_to_speech(memory.buffer_as_messages[0].content)
                 audio_play(audio_bytes0)
-            # with st.chat_message("Assistant" if message_type == "ai" else "User"):
-            #     audio_bytes0=text_to_speech(message_content)
-            #     st.audio(audio_bytes0, format='audio/mp3')
-
 
         with answer_placeholder:
             session_state.audio_recorded = False
-            try:
-                audio_bytes = audio_recorder(pause_threshold=2)
-                session_state.user_response = None
-            except:
-                st.write("Sorry, Could not recognize speech. Please try again")
-                        
+            audio_bytes = audio_recorder(pause_threshold=2)
+            session_state.user_response = None
             if audio_bytes:
-                try:
-                    session_state.user_response = recorder(audio_bytes)
-                except:
-                    st.write("Sorry, Could not recognize speech. Please try again")
+                session_state.user_response = recorder(audio_bytes)
 
-        with display_container:   
+        with display_container:
             if session_state.user_response:
                 with st.spinner("Thinking..."):
                     start_time = time.time()
@@ -127,15 +109,20 @@ def main():
                         st.write(session_state.user_response)
 
                     with st.chat_message("Assistant"):
-                        get_response(session_state.user_response, start_time)
-                        
+                        # After receiving the introduction, proceed to ask about the job role
+                        if not session_state.get("job_role_prompted"):
+                            message_history.add_user_message(session_state.user_response)
+                            session_state.job_role_prompted = True
+                            session_state.intro_prompted = False
+                            get_response("Please provide the job role or position you are applying for.", start_time)
+                        else:
+                            # Handle follow-up questions based on the job role
+                            get_response(session_state.user_response, start_time)
 
 def get_response(user_response, start_time):
     response = chain.run(user_response)
     st.write(response)
     audio_play(text_to_speech(response))
-    # st.audio(, format='audio/mp3')
-
     end_time = time.time()
     st.write(f"Execution time: {(end_time - start_time):.3f} seconds")
 
