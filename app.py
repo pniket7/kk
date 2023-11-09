@@ -30,8 +30,4 @@ def main():
         st.text(f'Advisor: {advisor_response}')
 
 if __name__ == "__main__":
-    main()chat(user_input=user_input, verbose=False)
-        st.text(f'Advisor: {advisor_response}')
-
-if __name__ == "__main__":
     main()
