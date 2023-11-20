@@ -22,42 +22,40 @@ def ErrorHandler(f, *args, **kwargs):
     return wrapper
 
 class ChatSession:
-
     completions = {
-            1: dict(
-                completion=openai.ChatCompletion, model="gpt-3.5-turbo", text='message.content', prompt='messages'
-            ),
-            0: dict(
-                completion=openai.Completion, model="text-davinci-003", text='text', prompt='prompt'
-            )
-        }
+        1: dict(
+            completion=openai.ChatCompletion,
+            model="gpt-3.5-turbo",
+            text='message.content',
+            prompt='messages'
+        ),
+        0: dict(
+            completion=openai.Completion,
+            model="text-davinci-003",
+            text='text',
+            prompt='prompt'
+        )
+    }
 
     def __init__(self, gpt_name='GPT') -> None:
         # History of all messages in the chat.
         self.messages = []
-
         # History of completions by the model.
         self.history = []
-
         # The name of the model.
         self.gpt_name = gpt_name
 
     def chat(self, user_input: Optional[Union[dict, str]] = None, verbose=True, *args, **kwargs):
         """ Say something to the model and get a reply. """
-
         completion_index = 0 if kwargs.get('logprobs', False) or kwargs.get('model') == 'text-davinci-003' else 1
-
         completion = self.completions[completion_index]
-
         user_input = self.__get_input(user_input=user_input, log=True)
         user_input = self.messages if completion_index else self.messages[-1]['content']
-
         kwargs.update({completion['prompt']: user_input, 'model': completion['model']})
-
+        if completion_index == 1:
+            kwargs.update({'temperature': 0.5})
         self.__get_reply(completion=completion['completion'], log=True, *args, **kwargs)
-
         self.history[-1].update({'completion_index': completion_index})
-
         if verbose:
             self.__call__(1)
 
