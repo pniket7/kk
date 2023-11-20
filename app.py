@@ -42,7 +42,7 @@ def main():
     user_input = st.text_input("Type your message here...")
 
     # Create a button to send the user input
-    if st.button("Send") or (not st.session_state.enter_pressed and user_input):
+    if st.button("Send") and user_input:
         # Add the user's message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
 
@@ -67,13 +67,6 @@ def main():
                 chat_messages += f'<div style="text-align: {alignment}; margin-bottom: 10px;"><span style="background-color: {role_color}; color: white; padding: 8px 12px; border-radius: 20px; display: inline-block; max-width: 70%;">{message["content"]}</span></div>'
         
         chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll;">{chat_messages}</div>', unsafe_allow_html=True)
-
-        # Set enter_pressed to True
-        st.session_state.enter_pressed = True
-
-    # Set enter_pressed to False when the user releases the Enter key
-    if not user_input:
-        st.session_state.enter_pressed = False
 
     # Create a button to start a new conversation
     if st.button("New Chat"):
