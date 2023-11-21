@@ -1,3 +1,4 @@
+# app.py
 import openai
 import streamlit as st
 from utils import ChatSession
@@ -14,21 +15,16 @@ def initialize_sessionAdvisor():
 def main():
     st.title('Financial Advisor Chatbot')
 
-    # Load the OpenAI API key from Streamlit secrets
     openai.api_key = st.secrets["api_key"]
 
-    # Initialize chat history in session state if it doesn't exist
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # Initialize sessionAdvisor if it doesn't exist or is set to None
     if "sessionAdvisor" not in st.session_state or st.session_state.sessionAdvisor is None:
         st.session_state.sessionAdvisor = initialize_sessionAdvisor()
 
-    # Display chat messages from history on app rerun
     chat_container = st.empty()
 
-    # Display the chat history
     chat_messages = ""
     if st.session_state.chat_history:
         for message in st.session_state.chat_history:
@@ -38,27 +34,19 @@ def main():
 
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll;">{chat_messages}</div>', unsafe_allow_html=True)
 
-    # Accept user input
     user_input = st.text_input("Type your message here...")
 
-    # Create a button to send the user input
     if st.button("Send") and user_input:
-        # Add the user's message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-        # Update the chat session with the user's input
         st.session_state.sessionAdvisor.chat(user_input=user_input, verbose=False)
 
-        # Get the chatbot's response from the last message in the history
         advisor_response = st.session_state.sessionAdvisor.messages[-1]['content'] if st.session_state.sessionAdvisor.messages else ""
 
-        # Remove newlines and extra spaces from the response
         advisor_response = advisor_response.replace('\n', ' ').strip()
 
-        # Add the chatbot's response to the chat history
         st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
-        # Display the chat history including new messages
         chat_messages = ""
         if st.session_state.chat_history:
             for message in st.session_state.chat_history:
@@ -68,24 +56,17 @@ def main():
         
         chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll;">{chat_messages}</div>', unsafe_allow_html=True)
 
-    # Create a button to start a new conversation
     if st.button("New Chat"):
-        # Clear the chat history to start a new conversation
         st.session_state.chat_history = []
 
-        # Reinitialize sessionAdvisor for a new conversation
         st.session_state.sessionAdvisor = initialize_sessionAdvisor()
 
-        # Clear the chat container for the new conversation
         chat_container.markdown("", unsafe_allow_html=True)
         st.markdown("New conversation started. You can now enter your query.")
 
-    # Create a button to exit the current conversation
     if st.button("Exit Chat"):
-        # Clear the chat history to exit the chat
         st.session_state.chat_history = []
 
-        # Clear the chat container for the exited chat
         chat_container.markdown("", unsafe_allow_html=True)
         st.markdown("Chatbot session exited. You can start a new conversation by clicking the 'New Chat' button.")
 
