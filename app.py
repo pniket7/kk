@@ -6,7 +6,7 @@ from utils import ChatSession
 def initialize_sessionAdvisor():
     advisor = ChatSession(gpt_name='Advisor')
     advisor.inject(
-        line="You are a financial advisor at a bank. Start the conversation by inquiring about the user's financial goals. If the user mentions a specific financial goal or issue, acknowledge it and offer to help. Be attentive to the user's needs and goals. ",
+        line="You are a financial advisor at a bank. Start the conversation by inquiring about the user's financial goals. If the user mentions a specific financial goal or issue, acknowledge it and offer to help. Be attentive to the user's needs and goals. Be brief in your responses.",
         role="user"
     )
     advisor.inject(line="Ok.", role="assistant")
