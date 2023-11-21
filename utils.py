@@ -154,7 +154,7 @@ def update_investor_profile(session, investor_profile: dict, questions: list[str
                                         session.messages +
                                         [{"role": "assistant", "content": temp_reply}] +
                                         [{"role": "user", "content": f'Do you know my {info_type} based on our conversation so far? Yes or no:'}],
-                                        model='gpt-3.5-turbo', n=n_limit, max_tokens=1).choices)]
+                                        model='gpt-3.5-turbo', n=n_limit, max_tokens=50).choices)]
         if verbose:
             print('1:')
             print({i: round(choices.count(i) / len(choices), 2) for i in pd.unique(choices)})
@@ -163,7 +163,7 @@ def update_investor_profile(session, investor_profile: dict, questions: list[str
                                         session.messages +
                                         [{"role": "assistant", "content": temp_reply}] +
                                         [{"role": "user", "content": questions[info_type]}],
-                                        model='gpt-3.5-turbo', n=n_limit, max_tokens=1).choices)]
+                                        model='gpt-3.5-turbo', n=n_limit, max_tokens=50).choices)]
             if verbose:
                 print('2:')
                 print({i: round(choices.count(i) / len(choices), 2) for i in pd.unique(choices)})
@@ -171,7 +171,6 @@ def update_investor_profile(session, investor_profile: dict, questions: list[str
                 investor_profile[info_type] = 'yes'
             elif np.any([*map(lambda x: 'no' in x.lower(), choices)]):
                 investor_profile[info_type] = 'no'
-
 
 
 # @ErrorHandler
