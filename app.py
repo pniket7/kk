@@ -5,10 +5,6 @@ import time
 import numpy as np
 import pandas as pd
 from typing import Optional, Union
-import re
-
-# List of predefined financial categories/terms
-financial_categories = ['loan', 'savings', 'investment', 'mortgage', 'insurance', 'credit card']
 
 def ErrorHandler(f, *args, **kwargs):
     def wrapper(*args, **kwargs):
@@ -148,15 +144,43 @@ class ChatSession:
             who = {'user': 'User: ', 'assistant': f'{self.gpt_name}: '}[msg['role']]
             print(who + message.strip() + '\n')
 
+@ErrorHandler
+def update_investor_profile(session, investor_profile: dict, questions: list[str], verbose: bool = False):
+    ask_for_these = [i for i in investor_profile if not investor_profile[i]]
+    n_limit = 20
+    temp_reply = openai.ChatCompletion.create(messages=session.messages.copy(), model='gpt-3.5-turbo').choices[0].message.content
+    for info_type in ask_for_these:
+        choices = [*map(lambda x: x.message.content, openai.ChatCompletion.create(messages=
+                                        session.messages +
+                                        [{"role": "assistant", "content": temp_reply}] +
+                                        [{"role": "user", "content": f'Do you know my {info_type} based on our conversation so far? Yes or no:'}],
+                                        model='gpt-3.5-turbo', n=n_limit, max_tokens=30).choices)]
+        if verbose:
+            print('1:')
+            print({i: round(choices.count(i) / len(choices), 2) for i in pd.unique(choices)})
+        if np.any([*map(lambda x: 'yes' in x.lower(), choices)]):
+            choices = [*map(lambda x: x.message.content, openai.ChatCompletion.create(messages=
+                                        session.messages +
+                                        [{"role": "assistant", "content": temp_reply}] +
+                                        [{"role": "user", "content": questions[info_type]}],
+                                        model='gpt-3.5-turbo', n=n_limit, max_tokens=50).choices)]
+            if verbose:
+                print('2:')
+                print({i: round(choices.count(i) / len(choices), 2) for i in pd.unique(choices)})
+            if np.any([*map(lambda x: 'yes' in x.lower(), choices)]):
+                investor_profile[info_type] = 'yes'
+            elif np.any([*map(lambda x: 'no' in x.lower(), choices)]):
+                investor_profile[info_type] = 'no'
+
 def initialize_sessionAdvisor():
     advisor = ChatSession(gpt_name='Advisor')
     advisor.inject(
-        line="You are a financial advisor at a bank. Engage the user as a financial advisor, initiating the conversation by asking about their financial goals. Proceed with follow-up questions based solely on the user's immediate response, maintaining a strictly sequential flow. Ask one question at a time, waiting for and responding to each user input individually. Ensure that each response from the advisor contains only a single query or request for information, refraining from posing multiple questions or requests within the same reply. If the user mentions a specific financial goal or issue, acknowledge it, offer assistance, and continue with a single follow-up question. Be attentive to the user's needs and goals, keeping responses concise and focused.",
+        line="You are a financial advisor at a bank. Start the conversation by inquiring about the user's financial goals and whether the user is seeking financial advice for himself or for his client. So ask the user at the start of the conversation whether he is a broker or he himself wants financial advice. If the user mentions a specific financial goal or issue, acknowledge it and offer to help. Be attentive to the user's needs and goals. Be brief in your responses.",
         role="user"
     )
     advisor.inject(line="Ok.", role="assistant")
     return advisor
-
+    
 def main():
     st.title('Financial Advisor Chatbot')
 
@@ -204,18 +228,6 @@ def main():
 
             # Remove newlines and extra spaces from the response
             advisor_response = advisor_response.replace('\n', ' ').strip()
-
-            # Identify choices based on predefined financial categories
-            identified_choices = []
-            for category in financial_categories:
-                if category in advisor_response.lower():
-                    identified_choices.append(category)
-
-            # Display buttons for identified choices
-            for choice in identified_choices:
-                if st.button(choice.capitalize()):
-                    # Add the user's choice to the chat history
-                    st.session_state.chat_history.append({"role": "user", "content": choice})
 
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
