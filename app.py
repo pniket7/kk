@@ -232,8 +232,14 @@ def main():
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
-        # Clear the input field after sending the message
-        user_input = ""
+        # Execute JavaScript to clear the input field after sending the message
+        st.write(
+            """
+            <script>
+            document.getElementById("textinput").value = "";
+            </script>
+            """
+        )
 
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
