@@ -239,6 +239,9 @@ def main():
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
+        # Set user_input to an empty string for resetting the input field
+        user_input = ""
+
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
         chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
