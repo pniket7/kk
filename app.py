@@ -233,7 +233,7 @@ def main():
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
         # Clear the input field after sending the message
-        user_input = ""
+        st.text_input("Type your message here...", value="", key="user_input")
 
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
@@ -261,4 +261,4 @@ def main():
         st.markdown("Chatbot session exited. You can start a new conversation by clicking the 'New Chat' button.")
 
 if __name__ == "__main__":
-    main()
+    main(
