@@ -184,6 +184,10 @@ def initialize_sessionAdvisor():
 def main():
     st.title('Financial Advisor Chatbot')
 
+    # Initialize user_input in session state if it doesn't exist
+    if "user_input" not in st.session_state:
+        st.session_state.user_input = ""
+
     # Load the OpenAI API key from Streamlit secrets
     openai.api_key = st.secrets["api_key"]
 
@@ -211,15 +215,15 @@ def main():
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
     # Accept user input
-    user_input = st.text_input("Type your message here...", value="")
+    user_input = st.text_input("Type your message here...", value=st.session_state.user_input)
 
     # Create a button to send the user input
     if st.button("Send") and user_input:
         # Add the user's message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-        # Reset the text_input widget after sending the message
-        user_input = ""
+        # Reset the user_input in session state
+        st.session_state.user_input = ""
 
         # Display "Bot is thinking..." message while bot generates response
         with st.spinner(text="Bot is thinking..."):
