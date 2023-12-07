@@ -211,8 +211,7 @@ def main():
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_display}</div>', unsafe_allow_html=True)
 
     # Accept user input
-    input_key = "user_input_main"  # Unique key for input in the main section
-    user_input = st.text_input("Type your message here...", key=input_key)
+    user_input = st.text_input("Type your message here...")
 
     # Create a button to send the user input
     button_key = "send_button"  # Unique key for button
@@ -240,9 +239,6 @@ def main():
         # Update the chat display with the updated chat history including new messages
         chat_display = update_chat_display(st.session_state.chat_history)
         chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_display}</div>', unsafe_allow_html=True)
-
-        # Update the input field to clear it for the next message
-        st.text_input("Type your message here...", key=input_key, value=user_input)
 
     # Create a button to start a new conversation
     if st.button("New Chat"):
