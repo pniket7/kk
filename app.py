@@ -210,16 +210,18 @@ def main():
     chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
+    # Initialize default input value
+    default_input = "Type your message here..."
     # Accept user input
     input_key = "user_input_main"  # Unique key for input in the main section
-    user_input = st.text_input("Type your message here...", key=input_key)
+    user_input = st.text_input("Type your message here...", key=input_key, value=default_input)
 
     # Create a button to send the user input
     button_key = "send_button"  # Unique key for button
-    if st.button("Send", key=button_key) and user_input:
+    if st.button("Send", key=button_key) and user_input != default_input:
         # Add the user's message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
-        st.session_state[input_key] = "" # Clear the first "Type your message here..." field
+        
 
         # Display "Bot is thinking..." message while bot generates response
         with st.spinner(text="Bot is thinking..."):
@@ -235,6 +237,11 @@ def main():
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
+            # Update the default input value to clear the previous message
+            default_input = ""
+
+    # Update the text input widget with the new default value
+    user_input = st.text_input("Type your message here...", key=input_key, value=default_input)
 
 
         # Display the updated chat history including new messages
