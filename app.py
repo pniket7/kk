@@ -240,6 +240,17 @@ def main():
         chat_display = update_chat_display(st.session_state.chat_history)
         chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_display}</div>', unsafe_allow_html=True)
 
+        # Execute JavaScript code to clear the input field after a short delay
+        st.write(
+            """
+            <script>
+            setTimeout(function() {
+                document.getElementById("TextInput-main").value = "";
+            }, 100);
+            </script>
+            """
+        )
+
     # Create a button to start a new conversation
     if st.button("New Chat"):
         # Clear the chat history to start a new conversation
