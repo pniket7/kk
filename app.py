@@ -211,7 +211,7 @@ def main():
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
     # Accept user input
-    user_input = st.text_input("Type your message here...")
+    user_input = st.text_input("Type your message here...", value=user_input)
 
     # Create a button to send the user input
     if st.button("Send") and user_input:
@@ -231,6 +231,7 @@ def main():
 
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
+            
             user_input = ""
 
         # Display the updated chat history including new messages
