@@ -211,10 +211,12 @@ def main():
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
     # Accept user input
-    user_input = st.text_input("Type your message here...", key="user_input")
+    input_key = "user_input"  # Unique key for input
+    user_input = st.text_input("Type your message here...", key=input_key)
 
     # Create a button to send the user input
-    if st.button("Send") and user_input:
+    button_key = "send_button"  # Unique key for button
+    if st.button("Send", key=button_key) and user_input:
         # Add the user's message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
 
@@ -233,7 +235,7 @@ def main():
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
         # Clear the input field by setting a new key
-        st.text_input("", key="user_input")
+        st.text_input("", key=f"{input_key}_clear")
 
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
