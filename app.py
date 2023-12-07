@@ -232,8 +232,8 @@ def main():
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
-        # Update the input field by setting it to an empty string
-        st.session_state.user_input = ""
+        # Clear the input field by setting a new key
+        st.text_input("", key="user_input")
 
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
