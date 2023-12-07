@@ -240,16 +240,13 @@ def main():
             # Update the default input value to clear the previous message
             default_input = ""
 
-    # Update the text input widget with the new default value
-    user_input = st.text_input("Type your message here...", key=input_key, value=default_input)
-
 
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
         chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
         # Clear the input field for the next message
-        st.text_input("Type your message here...", key=f"{input_key}_next", value=user_input)
+        user_input = st.text_input("Type your message here...", key=input_key, value=default_input)
 
 
     # Create a button to start a new conversation
