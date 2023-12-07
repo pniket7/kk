@@ -212,7 +212,6 @@ def main():
 
     # Accept user input
     input_key = "user_input"  # Unique key for input
-    user_input_key = f"user_input_{len(st.session_state.chat_history)}"
     user_input = st.text_input("Type your message here...", key=input_key)
 
     # Create a button to send the user input
@@ -235,8 +234,8 @@ def main():
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
-        # Clear the input field using SessionState
-        st.session_state.user_input = ""
+        # Clear the input field by setting the user_input variable to an empty string
+        user_input = ""
 
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
