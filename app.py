@@ -219,7 +219,7 @@ def main():
     if st.button("Send", key=button_key) and user_input:
         # Add the user's message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
-        st.session_state.user_input_main = "" # Clear the first "Type your message here..." field
+        st.session_state[input_key] = "" # Clear the first "Type your message here..." field
 
         # Display "Bot is thinking..." message while bot generates response
         with st.spinner(text="Bot is thinking..."):
