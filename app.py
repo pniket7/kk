@@ -211,7 +211,7 @@ def main():
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
     # Initialize default input value
-    default_input = "Type your message here..."
+    default_input = ""
     # Accept user input
     input_key = "user_input_main"  # Unique key for input in the main section
     user_input = st.text_input("Type your message here...", key=input_key, value=default_input)
