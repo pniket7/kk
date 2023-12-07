@@ -212,6 +212,7 @@ def main():
 
     # Accept user input
     input_key = "user_input"  # Unique key for input
+    user_input_key = f"user_input_{len(st.session_state.chat_history)}"
     user_input = st.text_input("Type your message here...", key=input_key)
 
     # Create a button to send the user input
