@@ -236,6 +236,9 @@ def main():
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
         chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
+        # Reset the user_input after sending the message
+        user_input = ""
+
     # Create a button to start a new conversation
     if st.button("New Chat"):
         # Clear the chat history to start a new conversation
