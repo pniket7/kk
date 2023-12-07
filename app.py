@@ -211,15 +211,15 @@ def main():
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
     # Accept user input
-    user_input = st.text_input("Type your message here...", value="", key="user_input")
+    user_input = st.text_input("Type your message here...", value="")
 
     # Create a button to send the user input
     if st.button("Send") and user_input:
         # Add the user's message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
 
-    # Reset the text_input widget after sending the message
-        st.text_input("Type your message here...", value="", key="user_input")
+        # Reset the text_input widget after sending the message
+        user_input = ""
 
         # Display "Bot is thinking..." message while bot generates response
         with st.spinner(text="Bot is thinking..."):
