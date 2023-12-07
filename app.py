@@ -184,10 +184,6 @@ def initialize_sessionAdvisor():
 def main():
     st.title('Financial Advisor Chatbot')
 
-    # Initialize user_input in session state if it doesn't exist
-    if "user_input" not in st.session_state:
-        st.session_state.user_input = ""
-
     # Load the OpenAI API key from Streamlit secrets
     openai.api_key = st.secrets["api_key"]
 
@@ -198,7 +194,7 @@ def main():
     # Initialize sessionAdvisor if it doesn't exist or is set to None
     if "sessionAdvisor" not in st.session_state or st.session_state.sessionAdvisor is None:
         st.session_state.sessionAdvisor = initialize_sessionAdvisor()
-
+        
     # Function to update chat history display
     def update_chat_display(messages):
         chat_messages = ""
@@ -215,15 +211,12 @@ def main():
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
     # Accept user input
-    user_input = st.text_input("Type your message here...", value=st.session_state.user_input)
+    user_input = st.text_input("Type your message here...", value="")
 
     # Create a button to send the user input
     if st.button("Send") and user_input:
         # Add the user's message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
-
-        # Reset the user_input in session state
-        st.session_state.user_input = ""
 
         # Display "Bot is thinking..." message while bot generates response
         with st.spinner(text="Bot is thinking..."):
@@ -239,8 +232,8 @@ def main():
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
-        # Set user_input to an empty string for resetting the input field
-        user_input = ""
+        # Clear the user_input field after sending the message
+        st.text_input("Type your message here...", value="", key="user_input")
 
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
