@@ -231,6 +231,7 @@ def main():
 
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
+            user_input = ""
 
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
