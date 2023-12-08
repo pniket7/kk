@@ -191,7 +191,7 @@ def main():
     st.title('Financial Advisor Chatbot')
 
     # Load the OpenAI API key from Streamlit secrets
-    openai.api_key = st.secrets['OPENAI_API_KEY']
+    openai.api_key = st.secrets["api_key"]
 
     # Initialize chat history in session state if it doesn't exist
     if "chat_history" not in st.session_state:
