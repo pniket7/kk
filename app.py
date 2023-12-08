@@ -175,7 +175,7 @@ def update_investor_profile(session, investor_profile: dict, questions: list[str
 def initialize_sessionAdvisor():
     advisor = ChatSession(gpt_name='Advisor')
     advisor.inject(
-        line="As a financial advisor representing the bank, your primary objective is to engage with the user and facilitate their decision to acquire a loan from the bank. If the user expresses interest in taking a loan and is convinced by your guidance, inform them that you will transfer the conversation to a human representative for further assistance and conclude the conversation. However, if the user remains unconvinced initially, endeavor to persuade them. Should the user persist in being uninterested, express gratitude and conclude the conversation. Commence the conversation by prompting the user to specify whether they are a broker or seeking a loan directly from the bank. Maintain attentiveness to the user's needs and objectives, ensuring concise responses.  Proceed with follow-up questions based solely on the user's immediate response, maintaining a strictly sequential flow. Ask one question at a time, waiting for and responding to each user input individually. Ensure that each response from the advisor contains only a single query or request for information, refraining from posing multiple questions or requests within the same reply. Assess the user's requirements and gather details regarding the desired type of loan from our bank. Upon determining the user's satisfaction with the loan's affordability, provide a sample explanation about the loan application process and interest rates. Guide the user accordingly through the process. If the user is convinced, transition them to a human representative for further steps and conclude the conversation. Conversely, thank the user graciously and conclude the conversation if they remain unconvinced.",
+        line="You are a financial advisor at a bank. Start the conversation by inquiring about the user's financial goals and whether the user is seeking financial advice for himself or for his client. So ask the user at the start of the conversation whether he is a broker or he himself wants financial advice.  Proceed with follow-up questions based solely on the user's immediate response, maintaining a strictly sequential flow. Ask one question at a time, waiting for and responding to each user input individually. Ensure that each response from the advisor contains only a single query or request for information, refraining from posing multiple questions or requests within the same reply. If the user mentions a specific financial goal or issue, acknowledge it and offer to help. Be attentive to the user's needs and goals. Be brief in your responses.",
         role="user"
     )
     advisor.inject(line="Ok.", role="assistant")
@@ -210,18 +210,12 @@ def main():
     chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
-    # Initialize default input value
-    default_input = ""
     # Accept user input
-    input_key = "user_input_main"  # Unique key for input in the main section
-    user_input = st.text_input("Type your message here...", key=input_key, value=default_input)
+    user_input = st.text_input("Type your message here...")
 
-    # Create a button to send the user input
-    button_key = "send_button"  # Unique key for button
-    if st.button("Send", key=button_key) and user_input != default_input:
+    if st.button("Send") and user_input:
         # Add the user's message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
-        
 
         # Display "Bot is thinking..." message while bot generates response
         with st.spinner(text="Bot is thinking..."):
@@ -237,17 +231,12 @@ def main():
             # Add the bot's response to the chat history
             st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
-            # Update the default input value to clear the previous message
-            default_input = ""
-
+        # Clear the user input field after sending the message
+        st.write('<script>document.querySelector("input").value = "";</script>', unsafe_allow_html=True)
 
         # Display the updated chat history including new messages
         chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
         chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
-
-        # Clear the input field for the next message
-        user_input = st.text_input("Type your message here...", key=input_key, value=default_input)
-
 
     # Create a button to start a new conversation
     if st.button("New Chat"):
