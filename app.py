@@ -180,12 +180,18 @@ def initialize_sessionAdvisor():
     )
     advisor.inject(line="Ok.", role="assistant")
     return advisor
+if "my_text" not in st.session_state:
+    st.session_state.my_text = ""
+
+def submit():
+    st.session_state.my_text = st.session_state.widget
+    st.session_state.widget = ""
     
 def main():
     st.title('Financial Advisor Chatbot')
 
     # Load the OpenAI API key from Streamlit secrets
-    openai.api_key = st.secrets["api_key"]
+    openai.api_key = st.secrets['OPENAI_API_KEY']
 
     # Initialize chat history in session state if it doesn't exist
     if "chat_history" not in st.session_state:
@@ -211,33 +217,33 @@ def main():
     chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
 
     # Accept user input
-    user_input = st.text_input("Type your message here...")
+    with st.form(key="my_form"):
+        placeholder=st.empty()
+        user_input = placeholder.text_input("Type your message here...",key="widget")
+        # Create a button to send the user inputs
+        if st.form_submit_button("Send",on_click=submit) and st.session_state.my_text:
+            # Add the user's message to the chat history
+            st.session_state.chat_history.append({"role": "user", "content": st.session_state.my_text})
 
-    if st.button("Send") and user_input:
-        # Add the user's message to the chat history
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
+            # Display "Bot is thinking..." message while bot generates response
+            with st.spinner(text="Bot is thinking..."):
+                # Update the chat session with the user's input
+                st.session_state.sessionAdvisor.chat(user_input=st.session_state.my_text, verbose=False)
 
-        # Display "Bot is thinking..." message while bot generates response
-        with st.spinner(text="Bot is thinking..."):
-            # Update the chat session with the user's input
-            st.session_state.sessionAdvisor.chat(user_input=user_input, verbose=False)
+                # Get the chatbot's response from the last message in the history
+                advisor_response = st.session_state.sessionAdvisor.messages[-1]['content'] if st.session_state.sessionAdvisor.messages else ""
 
-            # Get the chatbot's response from the last message in the history
-            advisor_response = st.session_state.sessionAdvisor.messages[-1]['content'] if st.session_state.sessionAdvisor.messages else ""
+                # Remove newlines and extra spaces from the response
+                advisor_response = advisor_response.replace('\n', ' ').strip()
 
-            # Remove newlines and extra spaces from the response
-            advisor_response = advisor_response.replace('\n', ' ').strip()
+                # Add the bot's response to the chat history
+                st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
 
-            # Add the bot's response to the chat history
-            st.session_state.chat_history.append({"role": "bot", "content": advisor_response})
-
-        # Clear the user input field after sending the message
-        st.write('<script>document.querySelector("input").value = "";</script>', unsafe_allow_html=True)
-
-        # Display the updated chat history including new messages
-        chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
-        chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
-
+            # Display the updated chat history including new messages
+            chat_and_thinking_display = update_chat_display(st.session_state.chat_history) + '<div id="thinking"></div>'
+            chat_container.markdown(f'<div style="border: 1px solid black; padding: 10px; height: 400px; overflow-y: scroll; position: relative;">{chat_and_thinking_display}</div>', unsafe_allow_html=True)
+        
+    
     # Create a button to start a new conversation
     if st.button("New Chat"):
         # Clear the chat history to start a new conversation
